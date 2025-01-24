@@ -2,6 +2,8 @@ import moment from 'moment';
 import * as soap from 'soap';
 import { IConfigService } from '../IConfigService';
 import { WsServicesNames } from '../SoapMethods';
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+const s3Client = new S3Client({ region: process.env.AWS_REGION });
 import {
     debug,
     LOG,
@@ -158,6 +160,18 @@ export class AfipSoap {
         throw new Error('Not private key');
     }
 
+    async function subirLogSOAP(key: string, contenido: string) {
+        const params = {
+            Bucket: process.env.AWS_S3_BUCKET,
+            Key: key,
+            Body: contenido,
+            ContentType: 'text/xml',
+        };
+    
+        const command = new PutObjectCommand(params);
+        return s3Client.send(command);
+    }
+
     private getSoapClient(serviceName: WsServicesNames) {
         const urls = this.urls[this.getAfipEnvironment()];
         const type = serviceName === 'login' ? 'login' : 'service';
@@ -170,15 +184,29 @@ export class AfipSoap {
             namespaceArrayElements: false,
         }).then((client) => {
             // Capturar las solicitudes (request)
-            client.on('request', (xml: string) => {
+            client.on('request', async (xml: string) => {
                 console.log('SOAP Request:', xml); // Muestra el XML
-                require('fs').writeFileSync('./soap_request.xml', xml); // Guarda en archivo
+                try {
+                    const timestamp = new Date().toISOString().replace(/:/g, '-');
+                    const key = `soap-logs/request_${serviceName}_${timestamp}.xml`;
+                    await subirLogSOAP(key, xml); // Subir el request a S3
+                    console.log(`SOAP Request subido a S3: ${key}`);
+                } catch (err) {
+                    console.error('Error al subir SOAP Request a S3:', err.message);
+                }
             });
     
             // Capturar las respuestas (response)
-            client.on('response', (xml: string) => {
+            client.on('response', async (xml: string) => {
                 console.log('SOAP Response:', xml); // Muestra el XML
-                require('fs').writeFileSync('./soap_response.xml', xml); // Guarda en archivo
+                try {
+                    const timestamp = new Date().toISOString().replace(/:/g, '-');
+                    const key = `soap-logs/response_${serviceName}_${timestamp}.xml`;
+                    await subirLogSOAP(key, xml); // Subir el response a S3
+                    console.log(`SOAP Response subido a S3: ${key}`);
+                } catch (err) {
+                    console.error('Error al subir SOAP Response a S3:', err.message);
+                }
             });
     
             return client; // Es necesario para devolver el cliente modificado
