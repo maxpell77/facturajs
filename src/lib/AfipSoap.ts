@@ -169,6 +169,14 @@ export class AfipSoap {
 
 
     private async uploadToS3(key: string, content: string): Promise<void> {
+        // Log preliminar de la configuración AWS
+        console.log('AWS Configuration:', {
+            bucket: process.env.AWS_S3_BUCKET,
+            key: `soap-logs/${key}`,
+            region: process.env.AWS_REGION || process.env.AWS_S3_REGION,
+        });
+    
+        // Construir los parámetros para S3
         const params = {
             Bucket: process.env.AWS_S3_BUCKET, // Asegúrate de configurar esta variable
             Key: `soap-logs/${key}`, // Carpeta específica para los logs SOAP
@@ -176,20 +184,33 @@ export class AfipSoap {
             ContentType: 'application/xml', // Tipo de contenido
         };
     
+        // Validar que los parámetros esenciales estén configurados
+        if (!params.Bucket || !params.Key || !params.Body) {
+            console.error('Parámetros inválidos para S3:', params);
+            throw new Error('Parámetros inválidos para S3');
+        }
+    
         try {
+            // Log para verificar los parámetros de S3 antes de enviarlos
             console.log('S3 Params:', params);
+    
+            // Crear el comando para subir a S3
             const command = new PutObjectCommand(params);
-            await s3Client.send(command); // Usamos el s3Client global
+    
+            // Enviar el comando utilizando el cliente S3 global
+            await s3Client.send(command);
             console.log(`Log subido a S3 exitosamente: ${key}`);
         } catch (err) {
+            // Manejo de errores con mensajes claros
             if (err instanceof Error) {
-                console.error('Error al subir a S3:', err.message); // Solo si tiene `message`
+                console.error('Error al subir a S3:', err.message);
             } else {
                 console.error('Error desconocido al subir a S3:', err);
             }
-            throw err; // Propaga el error
+            throw err; // Propaga el error para que pueda manejarse aguas arriba
         }
     }
+    
 
     
 
