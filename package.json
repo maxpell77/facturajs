@@ -10,13 +10,13 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "prettier": "prettier --write \"src/**/*.{md,json,ts}\"",
-    "clean": "rm -rf dist/*",
-    "prepare": "yarn prettier; yarn clean ; yarn build",
-    "build": "yarn run type:dts && yarn run build:main",
-    "build:main": "swc ./src -d ./dist",
-    "type:dts": "tsc --emitDeclarationOnly --project tsconfig.build.json"
-  },
+      "prettier": "prettier --write \"src/**/*.{md,json,ts}\"",
+      "clean": "rm -rf dist/*",
+      "prepare": "npm run prettier && npm run clean && npm run build",
+      "build": "npm run types:dts && npm run build:main",
+      "build:main": "swc ./src -d ./dist",
+      "types:dts": "tsc --emitDeclarationOnly --project tsconfig.build.json"
+  }
   "repository": {
     "type": "git",
     "url": "git+https://github.com/emilioastarita/facturajs.git"
