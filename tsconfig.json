@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "lib": ["es2022"],
-    "module": "esnext",
+    "module": "nodenext", // Cambiado de "esnext" a "nodenext"
     "target": "es2022",
     "moduleResolution": "nodenext",
     "esModuleInterop": true,
@@ -26,4 +26,3 @@
     "**/*.spec.ts"
   ]
 }
-
