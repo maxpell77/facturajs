@@ -177,6 +177,7 @@ export class AfipSoap {
         };
     
         try {
+            console.log('S3 Params:', params);
             const command = new PutObjectCommand(params);
             await s3Client.send(command); // Usamos el s3Client global
             console.log(`Log subido a S3 exitosamente: ${key}`);
@@ -223,7 +224,7 @@ export class AfipSoap {
                 console.log('SOAP Response:', xml); // Muestra el XML
                 try {
                     const timestamp = new Date().toISOString().replace(/:/g, '-');
-                    const key = `soap-logs/response_${serviceName}_${timestamp}.xml`;
+                    const key = `soap-logs/request_${serviceName}_${timestamp}.xml`;
                     await this.uploadToS3(key, xml); // Subir el response a S3
                 } catch (err) {
                     if (err instanceof Error) {
