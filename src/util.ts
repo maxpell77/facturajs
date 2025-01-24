@@ -49,7 +49,7 @@ export function parseXml<T>(xml: string) {
 
 export async function readStringFromFile(
     path: string,
-    encoding = 'utf8'
+    encoding: BufferEncoding = 'utf8'
 ): Promise<string> {
     return (await readFile(path)).toString(encoding);
 }
