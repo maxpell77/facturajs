@@ -160,17 +160,30 @@ export class AfipSoap {
         throw new Error('Not private key');
     }
 
-    async function subirLogSOAP(key: string, contenido: string) {
+
+    private async uploadToS3(key: string, content: string): Promise<void> {
         const params = {
-            Bucket: process.env.AWS_S3_BUCKET,
+            Bucket: process.env.AWS_S3_BUCKET, // Asegúrate de configurar esta variable
             Key: key,
-            Body: contenido,
-            ContentType: 'text/xml',
+            Body: content,
+            ContentType: 'application/xml', // Tipo de contenido
         };
     
-        const command = new PutObjectCommand(params);
-        return s3Client.send(command);
+        try {
+            const command = new PutObjectCommand(params);
+            await s3Client.send(command); // Usamos el s3Client global
+            console.log(`Log subido a S3 exitosamente: ${key}`);
+        } catch (err) {
+            if (err instanceof Error) {
+                console.error('Error al subir a S3:', err.message); // Solo si tiene `message`
+            } else {
+                console.error('Error desconocido al subir a S3:', err);
+            }
+            throw err; // Propaga el error
+        }
     }
+
+    
 
     private getSoapClient(serviceName: WsServicesNames) {
         const urls = this.urls[this.getAfipEnvironment()];
@@ -189,29 +202,35 @@ export class AfipSoap {
                 try {
                     const timestamp = new Date().toISOString().replace(/:/g, '-');
                     const key = `soap-logs/request_${serviceName}_${timestamp}.xml`;
-                    await subirLogSOAP(key, xml); // Subir el request a S3
-                    console.log(`SOAP Request subido a S3: ${key}`);
+                    await this.uploadToS3(key, xml); // Subir el request a S3
                 } catch (err) {
-                    console.error('Error al subir SOAP Request a S3:', err.message);
+                    if (err instanceof Error) {
+                        console.error('Error al subir SOAP Request a S3:', err.message);
+                    } else {
+                        console.error('Error desconocido al subir SOAP Request a S3:', err);
+                    }
                 }
             });
-    
-            // Capturar las respuestas (response)
+            
             client.on('response', async (xml: string) => {
                 console.log('SOAP Response:', xml); // Muestra el XML
                 try {
                     const timestamp = new Date().toISOString().replace(/:/g, '-');
                     const key = `soap-logs/response_${serviceName}_${timestamp}.xml`;
-                    await subirLogSOAP(key, xml); // Subir el response a S3
-                    console.log(`SOAP Response subido a S3: ${key}`);
+                    await this.uploadToS3(key, xml); // Subir el response a S3
                 } catch (err) {
-                    console.error('Error al subir SOAP Response a S3:', err.message);
+                    if (err instanceof Error) {
+                        console.error('Error al subir SOAP Response a S3:', err.message);
+                    } else {
+                        console.error('Error desconocido al subir SOAP Response a S3:', err);
+                    }
                 }
             });
     
             return client; // Es necesario para devolver el cliente modificado
         });
     }
+    
 
     private getAfipEnvironment(): 'homo' | 'prod' {
         return this.config.homo ? 'homo' : 'prod';
