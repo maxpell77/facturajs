@@ -165,9 +165,23 @@ export class AfipSoap {
             '{name}',
             encodeURIComponent(serviceName)
         );
-
+    
         return soap.createClientAsync(url, {
             namespaceArrayElements: false,
+        }).then((client) => {
+            // Capturar las solicitudes (request)
+            client.on('request', (xml: string) => {
+                console.log('SOAP Request:', xml); // Muestra el XML
+                require('fs').writeFileSync('./soap_request.xml', xml); // Guarda en archivo
+            });
+    
+            // Capturar las respuestas (response)
+            client.on('response', (xml: string) => {
+                console.log('SOAP Response:', xml); // Muestra el XML
+                require('fs').writeFileSync('./soap_response.xml', xml); // Guarda en archivo
+            });
+    
+            return client; // Es necesario para devolver el cliente modificado
         });
     }
 
