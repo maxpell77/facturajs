@@ -171,7 +171,7 @@ export class AfipSoap {
     private async uploadToS3(key: string, content: string): Promise<void> {
         const params = {
             Bucket: process.env.AWS_S3_BUCKET, // Asegúrate de configurar esta variable
-            Key: key,
+            Key: `soap-logs/${key}`, // Carpeta específica para los logs SOAP
             Body: content,
             ContentType: 'application/xml', // Tipo de contenido
         };
