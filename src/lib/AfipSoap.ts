@@ -179,22 +179,24 @@ export class AfipSoap {
         return soap.createClientAsync(url, {
             namespaceArrayElements: false,
         }).then((client) => {
+            let currentRequest: string | null = null;
+    
             // Capturar las solicitudes (request)
             client.on('request', async (xml: string) => {
-                console.log('SOAP Request:', xml);
-                // Guardar el request en la respuesta solo si ocurre un error
-                if (res) {
-                    res.locals.soapRequest = xml; // Adjunta el request al objeto `res.locals`
-                }
+                console.log('SOAP Request capturado');
+                currentRequest = xml; // Almacenar temporalmente el request
             });
     
             // Capturar las respuestas (response)
             client.on('response', async (xml: string) => {
-                console.log('SOAP Response:', xml);
-                // Verifica si la respuesta contiene errores y guarda en `res.locals`
+                console.log('SOAP Response capturado');
                 const hasError = xml.includes('<Errors>');
-                if (hasError && res) {
-                    res.locals.soapResponse = xml; // Adjunta el response al objeto `res.locals`
+                if (hasError) {
+                    console.error('Error detectado en el SOAP Response');
+                    if (res) {
+                        res.locals.soapRequest = currentRequest; // Guardar el request si hay error
+                        res.locals.soapResponse = xml; // Guardar el response si hay error
+                    }
                 }
             });
     
