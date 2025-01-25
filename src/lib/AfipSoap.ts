@@ -168,95 +168,37 @@ export class AfipSoap {
     }
 
 
-    private async uploadToS3(key: string, content: string): Promise<void> {
-        // Log preliminar de la configuración AWS
-        console.log('AWS Configuration:', {
-            bucket: process.env.AWS_S3_BUCKET,
-            Key: `soap-logs/test.xml`, 
-            region: process.env.AWS_REGION || process.env.AWS_S3_REGION,
-        });
-    
-        // Construir los parámetros para S3
-        const params = {
-            Bucket: process.env.AWS_S3_BUCKET, // Asegúrate de configurar esta variable
-            Key: `soap-logs/test.xml`, // Carpeta específica para los logs SOAP
-            Body: '<test>Test Content</test>',
-            ContentType: 'application/xml', // Tipo de contenido
-        };
-    
-        // Validar que los parámetros esenciales estén configurados
-        if (!params.Bucket || !params.Key || !params.Body) {
-            console.error('Parámetros inválidos para S3:', params);
-            throw new Error('Parámetros inválidos para S3');
-        }
-    
-        try {
-            // Log para verificar los parámetros de S3 antes de enviarlos
-            console.log('S3 Params:', params);
-    
-            // Crear el comando para subir a S3
-            const command = new PutObjectCommand(params);
-    
-            // Enviar el comando utilizando el cliente S3 global
-            await s3Client.send(command);
-            console.log(`Log subido a S3 exitosamente: ${key}`);
-        } catch (err) {
-            // Manejo de errores con mensajes claros
-            if (err instanceof Error) {
-                console.error('Error al subir a S3:', err.message);
-            } else {
-                console.error('Error desconocido al subir a S3:', err);
-            }
-            throw err; // Propaga el error para que pueda manejarse aguas arriba
-        }
-    }
-
-
     
 
-    private getSoapClient(serviceName: WsServicesNames) {
+    
+    private getSoapClient(serviceName: WsServicesNames, res?: any) {
         const urls = this.urls[this.getAfipEnvironment()];
         const type = serviceName === 'login' ? 'login' : 'service';
-        const url = urls[type].replace(
-            '{name}',
-            encodeURIComponent(serviceName)
-        );
+        const url = urls[type].replace('{name}', encodeURIComponent(serviceName));
     
         return soap.createClientAsync(url, {
             namespaceArrayElements: false,
         }).then((client) => {
             // Capturar las solicitudes (request)
             client.on('request', async (xml: string) => {
-                console.log('SOAP Request:', xml); // Muestra el XML
-                try {
-                    const timestamp = new Date().toISOString().replace(/:/g, '-');
-                    const key = `soap-logs/request_${serviceName}_${timestamp}.xml`;
-                    await this.uploadToS3(key, xml); // Subir el request a S3
-                } catch (err) {
-                    if (err instanceof Error) {
-                        console.error('Error al subir SOAP Request a S3:', err.message);
-                    } else {
-                        console.error('Error desconocido al subir SOAP Request a S3:', err);
-                    }
-                }
-            });
-            
-            client.on('response', async (xml: string) => {
-                console.log('SOAP Response:', xml); // Muestra el XML
-                try {
-                    const timestamp = new Date().toISOString().replace(/:/g, '-');
-                    const key = `soap-logs/request_${serviceName}_${timestamp}.xml`;
-                    await this.uploadToS3(key, xml); // Subir el response a S3
-                } catch (err) {
-                    if (err instanceof Error) {
-                        console.error('Error al subir SOAP Response a S3:', err.message);
-                    } else {
-                        console.error('Error desconocido al subir SOAP Response a S3:', err);
-                    }
+                console.log('SOAP Request:', xml);
+                // Guardar el request en la respuesta solo si ocurre un error
+                if (res) {
+                    res.locals.soapRequest = xml; // Adjunta el request al objeto `res.locals`
                 }
             });
     
-            return client; // Es necesario para devolver el cliente modificado
+            // Capturar las respuestas (response)
+            client.on('response', async (xml: string) => {
+                console.log('SOAP Response:', xml);
+                // Verifica si la respuesta contiene errores y guarda en `res.locals`
+                const hasError = xml.includes('<Errors>');
+                if (hasError && res) {
+                    res.locals.soapResponse = xml; // Adjunta el response al objeto `res.locals`
+                }
+            });
+    
+            return client; // Devuelve el cliente SOAP modificado
         });
     }
     
