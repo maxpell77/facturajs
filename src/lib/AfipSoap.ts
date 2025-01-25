@@ -32,8 +32,6 @@ type ICredentialsCache = {
 
 export class AfipSoap {
     private soapClient?: any;
-    private lastSoapRequest: string | null = null;
-    private lastSoapResponse: string | null = null; 
     private tokensAliasServices: SoapServiceAlias = {
         wsfev1: 'wsfe',
     };
@@ -165,30 +163,30 @@ export class AfipSoap {
 
 
     
-    private getSoapClient(serviceName: WsServicesNames) {
+    private async getSoapClient(serviceName: WsServicesNames): Promise<soap.Client> {
         const urls = this.urls[this.getAfipEnvironment()];
         const type = serviceName === 'login' ? 'login' : 'service';
         const url = urls[type].replace('{name}', encodeURIComponent(serviceName));
     
-        return soap.createClientAsync(url, {
+        const client = await soap.createClientAsync(url, {
             namespaceArrayElements: false,
-        }).then((client) => {
-            // Captura el request
-            client.on('request', async (xml: string) => {
-                console.log('SOAP Request capturado:');
-                console.log(xml); // Muestra el request capturado
-                client.lastSoapRequest = xml; // Almacena el request en el cliente
-            });
-    
-            // Captura el response
-            client.on('response', async (xml: string) => {
-                console.log('SOAP Response capturado:');
-                console.log(xml); // Muestra el response capturado
-                client.lastSoapResponse = xml; // Almacena el response en el cliente
-            });
-    
-            return client; // Devuelve el cliente modificado
         });
+    
+        // Captura el request
+        client.on('request', async (xml: string) => {
+            console.log('SOAP Request capturado:');
+            console.log(xml);
+            client.lastSoapRequest = xml;
+        });
+    
+        // Captura el response
+        client.on('response', async (xml: string) => {
+            console.log('SOAP Response capturado:');
+            console.log(xml);
+            client.lastSoapResponse = xml;
+        });
+    
+        return client;
     }
 
  
