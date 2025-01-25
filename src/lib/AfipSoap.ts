@@ -179,7 +179,7 @@ export class AfipSoap {
         // Construir los parámetros para S3
         const params = {
             Bucket: process.env.AWS_S3_BUCKET, // Asegúrate de configurar esta variable
-            Key: `soap-logs/${key}`, // Carpeta específica para los logs SOAP
+            Key: `soap-logs/test.xml`, // Carpeta específica para los logs SOAP
             Body: content,
             ContentType: 'application/xml', // Tipo de contenido
         };
@@ -210,7 +210,7 @@ export class AfipSoap {
             throw err; // Propaga el error para que pueda manejarse aguas arriba
         }
     }
-    
+
 
     
 
