@@ -31,7 +31,6 @@ type ICredentialsCache = {
 };
 
 export class AfipSoap {
-    private soapClient?: any;
     private tokensAliasServices: SoapServiceAlias = {
         wsfev1: 'wsfe',
     };
@@ -163,39 +162,19 @@ export class AfipSoap {
 
 
     
-    private async getSoapClient(serviceName: WsServicesNames): Promise<soap.Client> {
+    private getSoapClient(serviceName: WsServicesNames) {
         const urls = this.urls[this.getAfipEnvironment()];
         const type = serviceName === 'login' ? 'login' : 'service';
-        const url = urls[type].replace('{name}', encodeURIComponent(serviceName));
-    
-        const client = await soap.createClientAsync(url, {
+        const url = urls[type].replace(
+            '{name}',
+            encodeURIComponent(serviceName)
+        );
+
+        return soap.createClientAsync(url, {
             namespaceArrayElements: false,
         });
-    
-        // Captura el request
-        client.on('request', async (xml: string) => {
-            console.log('SOAP Request capturado:');
-            console.log(xml);
-            client.lastSoapRequest = xml;
-        });
-    
-        // Captura el response
-        client.on('response', async (xml: string) => {
-            console.log('SOAP Response capturado:');
-            console.log(xml);
-            client.lastSoapResponse = xml;
-        });
-    
-        return client;
     }
 
- 
-    public getLastLogs() {
-        return {
-            request: this.soapClient?.lastSoapRequest || null,
-            response: this.soapClient?.lastSoapResponse || null,
-        };
-    }
     
 
     private getAfipEnvironment(): 'homo' | 'prod' {
