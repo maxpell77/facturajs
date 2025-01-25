@@ -31,6 +31,7 @@ type ICredentialsCache = {
 };
 
 export class AfipSoap {
+    private soapClient?: any;
     private lastSoapRequest: string | null = null;
     private lastSoapResponse: string | null = null; 
     private tokensAliasServices: SoapServiceAlias = {
@@ -162,7 +163,6 @@ export class AfipSoap {
     }
 
 
-    
 
     
     private getSoapClient(serviceName: WsServicesNames) {
@@ -190,11 +190,12 @@ export class AfipSoap {
             return client; // Devuelve el cliente modificado
         });
     }
-    
-    public getLastSoapLogs(): { request: string | null; response: string | null } {
+
+ 
+    public getLastLogs() {
         return {
-            request: this.lastSoapRequest,
-            response: this.lastSoapResponse,
+            request: this.soapClient?.lastSoapRequest || null,
+            response: this.soapClient?.lastSoapResponse || null,
         };
     }
     
