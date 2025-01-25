@@ -2,15 +2,7 @@ import moment from 'moment';
 import * as soap from 'soap';
 import { IConfigService } from '../IConfigService';
 import { WsServicesNames } from '../SoapMethods';
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-const s3Client = new S3Client({
-    region: process.env.AWS_S3_REGION, // Asegúrate de tener configurada la región
-    credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-    },
-    endpoint: process.env.AWS_S3_ENDPOINT, // Configura el endpoint aquí si lo necesitas
-});
+
 import {
     debug,
     LOG,
@@ -39,6 +31,8 @@ type ICredentialsCache = {
 };
 
 export class AfipSoap {
+    private lastSoapRequest: string | null = null;
+    private lastSoapResponse: string | null = null; 
     private tokensAliasServices: SoapServiceAlias = {
         wsfev1: 'wsfe',
     };
@@ -171,7 +165,7 @@ export class AfipSoap {
     
 
     
-    private getSoapClient(serviceName: WsServicesNames, res?: any) {
+    private getSoapClient(serviceName: WsServicesNames) {
         const urls = this.urls[this.getAfipEnvironment()];
         const type = serviceName === 'login' ? 'login' : 'service';
         const url = urls[type].replace('{name}', encodeURIComponent(serviceName));
@@ -179,25 +173,14 @@ export class AfipSoap {
         return soap.createClientAsync(url, {
             namespaceArrayElements: false,
         }).then((client) => {
-            let currentRequest: string | null = null;
-    
-            // Capturar las solicitudes (request)
             client.on('request', async (xml: string) => {
                 console.log('SOAP Request capturado');
-                currentRequest = xml; // Almacenar temporalmente el request
+                this.lastSoapRequest = xml; // Almacena el último request
             });
     
-            // Capturar las respuestas (response)
             client.on('response', async (xml: string) => {
                 console.log('SOAP Response capturado');
-                const hasError = xml.includes('<Errors>');
-                if (hasError) {
-                    console.error('Error detectado en el SOAP Response');
-                    if (res) {
-                        res.locals.soapRequest = currentRequest; // Guardar el request si hay error
-                        res.locals.soapResponse = xml; // Guardar el response si hay error
-                    }
-                }
+                this.lastSoapResponse = xml; // Almacena el último response
             });
     
             return client; // Devuelve el cliente SOAP modificado
