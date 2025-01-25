@@ -180,7 +180,7 @@ export class AfipSoap {
         const params = {
             Bucket: process.env.AWS_S3_BUCKET, // Asegúrate de configurar esta variable
             Key: `soap-logs/test.xml`, // Carpeta específica para los logs SOAP
-            Body: content,
+            Body: '<test>Test Content</test>',
             ContentType: 'application/xml', // Tipo de contenido
         };
     
