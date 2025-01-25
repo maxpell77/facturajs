@@ -173,17 +173,21 @@ export class AfipSoap {
         return soap.createClientAsync(url, {
             namespaceArrayElements: false,
         }).then((client) => {
+            // Captura el request
             client.on('request', async (xml: string) => {
-                console.log('SOAP Request capturado');
-                this.lastSoapRequest = xml; // Almacena el último request
+                console.log('SOAP Request capturado:');
+                console.log(xml); // Muestra el request capturado
+                client.lastSoapRequest = xml; // Almacena el request en el cliente
             });
     
+            // Captura el response
             client.on('response', async (xml: string) => {
-                console.log('SOAP Response capturado');
-                this.lastSoapResponse = xml; // Almacena el último response
+                console.log('SOAP Response capturado:');
+                console.log(xml); // Muestra el response capturado
+                client.lastSoapResponse = xml; // Almacena el response en el cliente
             });
     
-            return client; // Devuelve el cliente SOAP modificado
+            return client; // Devuelve el cliente modificado
         });
     }
     
