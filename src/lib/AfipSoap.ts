@@ -172,7 +172,7 @@ export class AfipSoap {
         // Log preliminar de la configuración AWS
         console.log('AWS Configuration:', {
             bucket: process.env.AWS_S3_BUCKET,
-            key: `soap-logs/${key}`,
+            Key: `soap-logs/test.xml`, 
             region: process.env.AWS_REGION || process.env.AWS_S3_REGION,
         });
     
