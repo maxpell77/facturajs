@@ -187,6 +187,13 @@ export class AfipSoap {
         });
     }
     
+    public getLastSoapLogs(): { request: string | null; response: string | null } {
+        return {
+            request: this.lastSoapRequest,
+            response: this.lastSoapResponse,
+        };
+    }
+    
 
     private getAfipEnvironment(): 'homo' | 'prod' {
         return this.config.homo ? 'homo' : 'prod';
